@@ -25,6 +25,6 @@ connection.connect(function (err) {
     }
 });
 
-app.listen(2998, function () {
+app.listen(2997, function () {
     console.log('Server started.');
 });
