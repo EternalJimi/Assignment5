@@ -3,14 +3,20 @@
 var express = require('express'),
     app = express();
 var bodyParser = require("body-parser");
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var mysql = require('mysql');
 var connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: 'mysql',
-    database: 'warehouse_db'
+    database: 'bear_db'
 });
+
+//MES initialisation
+var mes = {
+    
+};
+
 //instructions for the user - will be shown in the /warehouse view
 var instructions = {
     Searching_Materials: "You can search materials with parameters: 'id, category, type, quantity, supplier, arrival_date, receivedBefore, receivedAfter.",
@@ -26,7 +32,7 @@ app.use(bodyParser.json()); // Body parser use JSON data
 //create a connection to mySQL
 connection.connect(function (err) {             
     if (!err) {
-        console.log("Connected to database.");
+        console.log("[MES] Connected to database.");
     } else {
         res.statusCode = 503; //Service unavailable
         console.log("Error...");
@@ -260,16 +266,24 @@ app.get('/warehouse/products', function (req, res) {
 //-POST/ADD----------------------------------------------------------------------
 //--Materials
 
-app.post('/warehouse/materials', function (req, res) {
+app.post("/createNew", function (req,res) {
     var data = {
-        "Back to Warehouse": "/warehouse",
-        "Go to Materials": "/warehouse/materials",
-        "Go to Products": "/warehouse/products",
-        "Message": ""
+    
     };
-
-    var query = req.query;
-
+    
+    var product = req.body.product; // getting the parameter from the request
+    var quantity = req.body.quantity; // getting the parameter from the request
+    
+    console.log(req.body);
+    
+    console.log("product: "+product+" quantity: "+quantity);
+    
+    if (product != undefined && quantity != undefined) {
+        res.status(200).send("Body accessible.");
+    } else {
+        res.status(404).send("Not found");
+    }
+    /*
     //Test all attributes are given (id, category, type, quantity, supplier, arrival_date)
     if (query.hasOwnProperty('category') && query.hasOwnProperty('type')
         && query.hasOwnProperty('quantity') && query.hasOwnProperty('supplier') && query.hasOwnProperty('arrival_date')) {
@@ -310,7 +324,7 @@ app.post('/warehouse/materials', function (req, res) {
         console.log("You must fill category, type, quantity, supplier and arrival_date");
         data["Message"] = "You must fill category, type, quantity, supplier and arrival_date";
         res.status(400).json(data);
-    };
+    };*/
 });
 
 //-Products----------------------------------------------
@@ -719,5 +733,5 @@ app.put('/warehouse/products', function (req, res) {
 //----UPDATE------------------------------------------------------------------------------
 
 app.listen(2998, function () {
-    console.log('Server started.');
+    console.log('MES Server started. Port: 2998');
 });

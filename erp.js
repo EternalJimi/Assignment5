@@ -1,17 +1,20 @@
 var express = require('express'),
     app = express();
 var bodyParser = require("body-parser");
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var mysql = require('mysql');
+var request = require('request');
+
 var connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: 'mysql',
-    database: 'warehouse_db'
+    database: 'bear_db'
 });
 
 //Connection to MES
 var mes = require('./mes.js');
+mesURL = "http://localhost:2998";
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json()); // Body parser uses JSON data
@@ -19,7 +22,7 @@ app.use(bodyParser.json()); // Body parser uses JSON data
 //create a connection to mySQL
 connection.connect(function (err) {             
     if (!err) {
-        console.log("Connected to database.");
+        console.log("[ERP] Connected to database.");
     } else {
         res.statusCode = 503; //Service unavailable
         console.log("Error...");
@@ -73,7 +76,7 @@ app.get('/order/:id', function (req, res) {
     var sql_query = "SELECT * FROM orders";
     
     //Checking the param
-    if (query.hasOwnProperty('id')) {
+    if (id !== undefined) {
         sql_query = sql_query + " WHERE order_id='" + id + "'";
     } else {
         console.log("No order id given.")
@@ -94,7 +97,59 @@ app.get('/order/:id', function (req, res) {
 
 });
 
+//----POST---------------------------------------------------------------------------
+
+//--Post orders
+app.post('/orders', function (req,res){
+    var data = {
+        "New Order": ""
+    };
+    
+    var query = req.query; //Accessing query
+    
+    // Create an id and GET the attributes and store them into variables
+    var id = uuid.v4() // id generated
+    var product = query.product;
+    var quantity = query.quantity;
+    var date = query.done_by;
+    var status = query.status;
+    
+    // conenction to mysql database + inserting data to database according to given parameters + result handling
+    connection.query("INSERT INTO orders (order_id,product,quantity,delivery,status) VALUES ('" + id + "','" + product + "','" + quantity + "','" + date + "','" + status + "')", function (err, rows, fields) {
+        if (err) {
+            console.log("Error Adding data: " + err);
+            data["Message"] = "Error Adding data";
+            //respond to postman
+            res.status(400).json(data); //400 Query not complete
+        } else {
+
+            console.log("Order Created Successfully");
+            data["Message"] = "Order Created Successfully";
+            //respond to postman
+            res.status(201).send({url:'/order/' + id}); //201: Created
+        }
+    });
+    
+    var options = {
+        url: mesURL + "/createNew",
+        method: "POST",
+        //here we are using our server url:
+        json:{"product": product, "quantity": quantity} //body
+    }
+    
+    //logging request. just for debugging purposes, so that you can see if something goes wrong
+    console.log(JSON.stringify(options));
+    //request from require('request')
+    request(options , function(error, response, body){
+        if(error) {
+            console.log(error);
+        } else {
+            console.log(response.statusCode, body);
+        }
+    });
+});
+
 //----- ERP on port 2997 -----
 app.listen(2997, function () {
-    console.log('Server started.');
+    console.log('ERP server started. Port: 2997');
 });
