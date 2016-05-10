@@ -286,7 +286,22 @@ app.post("/createNew", function (req,res) {
         res.status(404).send(data);
     }
     
-    // Checking if enough materialsfrom database for given model
+    connection.query("SELECT * FROM master_recipe WHERE model =" + model, function (err, rows, fields) {
+        if (err) {
+            console.log("Error finding data");
+            data["Message"] = "Error finding data: " + err;
+            res.status(400).json(data);
+        } else if (rows.length==0){
+            console.log("Model: "+ model +" not found.");
+        } else {
+            console.log("Material: "+ model +" found.");
+            var frame_type = rows[0].frame;
+            var screen_type = rows[0].screen;
+            var keyboard_type = rows[0].keyboard;
+        }
+    });
+    
+    // Checking if enough materials for given model
     connection.query("SELECT * FROM materials WHERE type =" + "screen_type", function (err, rows, fields) {
         if (err) {
             console.log("Error finding data");
@@ -350,6 +365,8 @@ app.post("/createNew", function (req,res) {
             }
         }
     });
+    
+    res.send("Something happened.")
     
     /*
     //Test all attributes are given (id, category, type, quantity, supplier, arrival_date)
