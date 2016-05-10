@@ -286,11 +286,11 @@ app.post("/createNew", function (req,res) {
         res.status(404).send(data);
     }
     
-    connection.query("SELECT * FROM master_recipe WHERE model =" + model, function (err, rows, fields) {
+    connection.query("SELECT * FROM master_recipe WHERE model =" + '"' + model + '"', function (err, rows, fields) {
         if (err) {
-            console.log("Error finding data");
+            console.log("Error finding data: " + err);
             data["Message"] = "Error finding data: " + err;
-            res.status(400).json(data);
+            //res.status(400).json(data);
         } else if (rows.length==0){
             console.log("Model: "+ model +" not found.");
         } else {
@@ -298,71 +298,71 @@ app.post("/createNew", function (req,res) {
             var frame_type = rows[0].frame;
             var screen_type = rows[0].screen;
             var keyboard_type = rows[0].keyboard;
-        }
-    });
-    
-    // Checking if enough materials for given model
-    connection.query("SELECT * FROM materials WHERE type =" + "screen_type", function (err, rows, fields) {
-        if (err) {
-            console.log("Error finding data");
-            data["Message"] = "Error finding data: " + err;
-            res.status(400).json(data);
-        } else if (rows.length==0){
-            console.log("Material: "+ "screen_type" +" not found.");
-        } else {
-            console.log("Material: "+ "screen_type" +" found.");
-            if (rows[0].assign_id != null) {
-                if (rows[0].quantity < 1) {
-                    // order new material here
+            
+            // Checking if enough materials for given model
+            connection.query("SELECT * FROM materials WHERE type =" + '"' + screen_type + '"', function (err, rows, fields) {
+                if (err) {
+                    console.log("Error finding data");
+                    data["Message"] = "Error finding data: " + err;
+                    //res.status(400).json(data);
+                } else if (rows.length==0){
+                    console.log("Material: "+ screen_type +" not found.");
                 } else {
-                    //Enough right material. Proceed.
-                     console.log("Enough material:" + "screen_type");
-                    data["Message"] = "Enough material:" + "screen_type";
-                    //res.status(201).json(data);
+                    console.log("Material: "+ screen_type +" found.");
+                    if (rows[0].assign_id != null) {
+                        if (rows[0].quantity < 1) {
+                            // order new material here
+                        } else {
+                            //Enough right material. Proceed.
+                             console.log("Enough material:" + screen_type);
+                            data["Message"] = "Enough material:" + screen_type;
+                            //res.status(201).json(data);
+                        }
+                    }
                 }
-            }
-        }
-    });
-    connection.query("SELECT * FROM materials WHERE type =" + "frame_type", function (err, rows, fields) {
-        if (err) {
-            console.log("Error finding data");
-            data["Message"] = "Error finding data: " + err;
-            res.status(400).json(data);
-        } else if (rows.length==0){
-            console.log("Material: "+ "frame_type" +" not found.");
-        } else {
-            console.log("Material: "+ "frame_type" +" found.");
-            if (rows[0].assign_id != null) {
-                if (rows[0].quantity < 1) {
-                    // order new material here
+            });
+            connection.query("SELECT * FROM materials WHERE type =" + '"' + frame_type + '"', function (err, rows, fields) {
+                if (err) {
+                    console.log("Error finding data");
+                    data["Message"] = "Error finding data: " + err;
+                    //res.status(400).json(data);
+                } else if (rows.length==0){
+                    console.log("Material: "+ frame_type +" not found.");
                 } else {
-                    //Enough right material. Proceed.
-                     console.log("Enough material:" + "frame_type");
-                    data["Message"] = "Enough material:" + "frame_type";
-                    //res.status(201).json(data);
+                    console.log("Material: "+ frame_type +" found.");
+                    if (rows[0].assign_id != null) {
+                        if (rows[0].quantity < 1) {
+                            // order new material here
+                        } else {
+                            //Enough right material. Proceed.
+                             console.log("Enough material:" + frame_type);
+                            data["Message"] = "Enough material:" + frame_type;
+                            //res.status(201).json(data);
+                        }
+                    }
                 }
-            }
-        }
-    });
-    connection.query("SELECT * FROM materials WHERE type =" + "keyboard_type", function (err, rows, fields) {
-        if (err) {
-            console.log("Error finding data");
-            data["Message"] = "Error finding data: " + err;
-            res.status(400).json(data);
-        } else if (rows.length==0){
-            console.log("Material: "+ "keyboard_type" +" not found.");
-        } else {
-            console.log("Material: "+ "keyboard_type" +" found.");
-            if (rows[0].assign_id != null) {
-                if (rows[0].quantity < 1) {
-                    // order new material here
+            });
+            connection.query("SELECT * FROM materials WHERE type =" + '"' + keyboard_type + '"', function (err, rows, fields) {
+                if (err) {
+                    console.log("Error finding data");
+                    data["Message"] = "Error finding data: " + err;
+                    //res.status(400).json(data);
+                } else if (rows.length==0){
+                    console.log("Material: "+ keyboard_type +" not found.");
                 } else {
-                    //Enough right material. Proceed.
-                     console.log("Enough material:" + "keyboard_type");
-                    data["Message"] = "Enough material:" + "keyboard_type";
-                    //res.status(201).json(data);
+                    console.log("Material: "+ keyboard_type +" found.");
+                    if (rows[0].assign_id != null) {
+                        if (rows[0].quantity < 1) {
+                            // order new material here
+                        } else {
+                            //Enough right material. Proceed.
+                             console.log("Enough material:" + keyboard_type);
+                            data["Message"] = "Enough material:" + keyboard_type;
+                            //res.status(201).json(data);
+                        }
+                    }
                 }
-            }
+            });
         }
     });
     
