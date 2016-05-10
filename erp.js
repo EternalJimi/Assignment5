@@ -112,10 +112,11 @@ app.post('/orders', function (req,res){
     var product = query.product;
     var quantity = query.quantity;
     var date = query.done_by;
-    var status = query.status;
+    var customer = query.customer;
+    var status = "in progress";
     
     // conenction to mysql database + inserting data to database according to given parameters + result handling
-    connection.query("INSERT INTO orders (order_id,product,quantity,delivery,status) VALUES ('" + id + "','" + product + "','" + quantity + "','" + date + "','" + status + "')", function (err, rows, fields) {
+    connection.query("INSERT INTO orders (order_id,product,quantity,delivery,customer,status) VALUES ('" + id + "','" + product + "','" + quantity + "','" + date + "','" + customer + "','" + status + "')", function (err, rows, fields) {
         if (err) {
             console.log("Error Adding data: " + err);
             data["Message"] = "Error Adding data";
@@ -134,7 +135,12 @@ app.post('/orders', function (req,res){
         url: mesURL + "/createNew",
         method: "POST",
         //here we are using our server url:
-        json:{"product": product, "quantity": quantity} //body
+        json:{
+           "product": product, 
+           "quantity": quantity,
+           "order_id": id,
+           "customer": customer
+        } //Body. These values get passed on when requested.
     }
     
     //logging request. just for debugging purposes, so that you can see if something goes wrong

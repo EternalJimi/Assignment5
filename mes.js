@@ -264,25 +264,42 @@ app.get('/warehouse/products', function (req, res) {
 });
 //--------------------------------------------------------GET----------------
 //-POST/ADD----------------------------------------------------------------------
-//--Materials
+//--New product order
 
 app.post("/createNew", function (req,res) {
     var data = {
     
     };
     
-    var product = req.body.product; // getting the parameter from the request
-    var quantity = req.body.quantity; // getting the parameter from the request
+    var model = req.body.product; // getting the parameter from the request
+    var quantity = req.body.quantity; // -||-
+    var customer = req.body.customer;
+    var order_id = req.body.order_id;
     
-    console.log(req.body);
+    console.log(req.body); //Debug
     
-    console.log("product: "+product+" quantity: "+quantity);
-    
-    if (product != undefined && quantity != undefined) {
-        res.status(200).send("Body accessible.");
+    if (model!=undefined && quantity!=undefined && customer!=undefined && order_id!=undefined) {
+        //res.status(200).send("Body accessible.");
+        console.log("Values from body accessible.");
     } else {
-        res.status(404).send("Not found");
+        data["Message"] = "Something went wrong. Check given inputs.";
+        res.status(404).send(data);
     }
+    
+    // conenction to mysql database + inserting data to database according to given parameters + result handling
+    connection.query("INSERT INTO products (model,quantity,customer,order_id) VALUES ('" + model + "','" + quantity + "','" + customer + "','" + order_id + "')", function (err, rows, fields) {
+        if (err) {
+            console.log("Error Adding data");
+            data["Message"] = "Error Adding data: " + err;
+            res.status(400).json(data);
+        } else {
+
+            console.log("Product Added Successfully");
+            data["Message"] = "Product Added Successfully";
+            res.status(201).json(data);
+        }
+    });
+    
     /*
     //Test all attributes are given (id, category, type, quantity, supplier, arrival_date)
     if (query.hasOwnProperty('category') && query.hasOwnProperty('type')
