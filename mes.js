@@ -6,6 +6,7 @@ var request = require('request');
 var bodyParser = require("body-parser");
 var uuid = require('uuid');
 var mysql = require('mysql');
+var async = require('async');
 var connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -39,7 +40,6 @@ connection.connect(function (err) {
     if (!err) {
         console.log("[MES] Connected to database.");
     } else {
-        res.statusCode = 503; //Service unavailable
         console.log("Error...");
         console.log(err);
         process.exit(1);
@@ -304,13 +304,29 @@ app.post("/createNew", function (req, res) {
             var frame_type = rows[0].frame;
             var screen_type = rows[0].screen;
             var keyboard_type = rows[0].keyboard;
+            
+            async.series([
+                function (callback) {
+                    checkMaterials(frame_type,screen_type,keyboard_type,callback);
+                }],
+                function (err, results) {
+                    if (err) {
+                        console.log(err);
+                    } else if (results[0]==1) {
+                        console.log("Materials ready");
+                    } else {
+                        console.log("Materials not ready");
+                        console.log("results: "+results);
+                    }
+                }
+            );
 
-            var ready = checkMaterials(frame_type,screen_type,keyboard_type);
+            /*var ready = checkMaterials(frame_type,screen_type,keyboard_type);
             if (ready == 1) {
                 console.log("All materials ready");
             } else {
                 console.log("Should check again.");
-            }
+            }*/
         }
     });
 
@@ -808,7 +824,7 @@ app.get("/pick-scada-message", function (req, res) {
     res.send();
 });
 
-function checkMaterials(frame_type,screen_type,keyboard_type) {
+function checkMaterials(frame_type,screen_type,keyboard_type,callback) {
     //Every value of array should be 1 if materials are present
     var checkArray = [0,0,0];
     var state = 0; //state 0 if not ready, 1 when ready
@@ -864,7 +880,7 @@ function checkMaterials(frame_type,screen_type,keyboard_type) {
         } else if (rows.length == 0) {
             console.log("Material: " + keyboard_type + " not found.");
             console.log("CheckArray= " + checkArray);
-            return state;
+            callback(null,state);
         } else {
             console.log("Material: " + keyboard_type + " found.");
             if (rows[0].assign_id != null) {
@@ -881,7 +897,7 @@ function checkMaterials(frame_type,screen_type,keyboard_type) {
                         state = 1;
                     }
                     console.log("CheckArray= " + checkArray);
-                    return state;
+                    callback(null,state);
                 }
             }
         }
