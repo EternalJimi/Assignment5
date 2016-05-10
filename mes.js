@@ -1,7 +1,8 @@
-// Author: Lauri "Super" Tyysk� & Jimi "Jalmari" Manninen
+﻿// Author: Lauri "Super" Tyysk� & Jimi "Jalmari" Manninen
 
 var express = require('express'),
     app = express();
+var request = require('request');
 var bodyParser = require("body-parser");
 var uuid = require('uuid');
 var mysql = require('mysql');
@@ -14,7 +15,7 @@ var connection = mysql.createConnection({
 
 //MES initialisation
 var mes = {
-    
+
 };
 
 //instructions for the user - will be shown in the /warehouse view
@@ -30,7 +31,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json()); // Body parser use JSON data
 
 //create a connection to mySQL
-connection.connect(function (err) {             
+connection.connect(function (err) {
     if (!err) {
         console.log("[MES] Connected to database.");
     } else {
@@ -56,7 +57,7 @@ app.get('/warehouse', function (req, res) {
 
 //--get materials
 app.get('/warehouse/materials', function (req, res) {
-    
+
     var data = {
         "Back to Warehouse": "/warehouse",
         "Go to Materials": "/warehouse/materials",
@@ -89,7 +90,7 @@ app.get('/warehouse/materials', function (req, res) {
     //to sql_query with "AND" so the sql syntax is valid. 
     if (query.hasOwnProperty('category')) {
         if (check != 0) {
-            
+
             sql_query = sql_query + "AND category='" + category + "'";
         } else {
             sql_query = sql_query + "category='" + category + "'";
@@ -185,7 +186,7 @@ app.get('/warehouse/products', function (req, res) {
 
     var sql_query = "SELECT * FROM products WHERE ";
     if (query.hasOwnProperty('id')) {
-        sql_query = sql_query+"product_id='" + id + "'";
+        sql_query = sql_query + "product_id='" + id + "'";
         check = 1;
     }
     if (query.hasOwnProperty('category')) {
@@ -194,7 +195,7 @@ app.get('/warehouse/products', function (req, res) {
         } else {
             sql_query = sql_query + "category='" + category + "'";
             check = 1;
-        } 
+        }
     }
     if (query.hasOwnProperty('type')) {
         if (check != 0) {
@@ -249,7 +250,7 @@ app.get('/warehouse/products', function (req, res) {
     if (check == 0) {
         sql_query = "SELECT * from products";
     }
-    
+
     //connection to mysql and final query statement + result handling
     connection.query(sql_query, function (err, rows, fields) {
         if (rows.length != 0) {
@@ -266,55 +267,55 @@ app.get('/warehouse/products', function (req, res) {
 //-POST/ADD----------------------------------------------------------------------
 //--New product order
 
-app.post("/createNew", function (req,res) {
+app.post("/createNew", function (req, res) {
     var data = {
-    
+
     };
-    
+
     var model = req.body.product; // getting the parameter from the request
     var quantity = req.body.quantity; // -||-
     var customer = req.body.customer;
     var order_id = req.body.order_id;
-    
+
     console.log(req.body); //Debug
-    
-    if (model!=undefined && quantity!=undefined && customer!=undefined && order_id!=undefined) {
+
+    if (model != undefined && quantity != undefined && customer != undefined && order_id != undefined) {
         //res.status(200).send("Body accessible.");
         console.log("Values from body accessible.");
     } else {
         data["Message"] = "Something went wrong. Check given inputs.";
         res.status(404).send(data);
     }
-    
+
     connection.query("SELECT * FROM master_recipe WHERE model =" + '"' + model + '"', function (err, rows, fields) {
         if (err) {
             console.log("Error finding data: " + err);
             data["Message"] = "Error finding data: " + err;
             //res.status(400).json(data);
-        } else if (rows.length==0){
-            console.log("Model: "+ model +" not found.");
+        } else if (rows.length == 0) {
+            console.log("Model: " + model + " not found.");
         } else {
-            console.log("Material: "+ model +" found.");
+            console.log("Material: " + model + " found.");
             var frame_type = rows[0].frame;
             var screen_type = rows[0].screen;
             var keyboard_type = rows[0].keyboard;
-            
+
             // Checking if enough materials for given model
             connection.query("SELECT * FROM materials WHERE type =" + '"' + screen_type + '"', function (err, rows, fields) {
                 if (err) {
                     console.log("Error finding data");
                     data["Message"] = "Error finding data: " + err;
                     //res.status(400).json(data);
-                } else if (rows.length==0){
-                    console.log("Material: "+ screen_type +" not found.");
+                } else if (rows.length == 0) {
+                    console.log("Material: " + screen_type + " not found.");
                 } else {
-                    console.log("Material: "+ screen_type +" found.");
+                    console.log("Material: " + screen_type + " found.");
                     if (rows[0].assign_id != null) {
                         if (rows[0].quantity < 1) {
                             // order new material here
                         } else {
                             //Enough right material. Proceed.
-                             console.log("Enough material:" + screen_type);
+                            console.log("Enough material:" + screen_type);
                             data["Message"] = "Enough material:" + screen_type;
                             //res.status(201).json(data);
                         }
@@ -326,16 +327,16 @@ app.post("/createNew", function (req,res) {
                     console.log("Error finding data");
                     data["Message"] = "Error finding data: " + err;
                     //res.status(400).json(data);
-                } else if (rows.length==0){
-                    console.log("Material: "+ frame_type +" not found.");
+                } else if (rows.length == 0) {
+                    console.log("Material: " + frame_type + " not found.");
                 } else {
-                    console.log("Material: "+ frame_type +" found.");
+                    console.log("Material: " + frame_type + " found.");
                     if (rows[0].assign_id != null) {
                         if (rows[0].quantity < 1) {
                             // order new material here
                         } else {
                             //Enough right material. Proceed.
-                             console.log("Enough material:" + frame_type);
+                            console.log("Enough material:" + frame_type);
                             data["Message"] = "Enough material:" + frame_type;
                             //res.status(201).json(data);
                         }
@@ -347,16 +348,16 @@ app.post("/createNew", function (req,res) {
                     console.log("Error finding data");
                     data["Message"] = "Error finding data: " + err;
                     //res.status(400).json(data);
-                } else if (rows.length==0){
-                    console.log("Material: "+ keyboard_type +" not found.");
+                } else if (rows.length == 0) {
+                    console.log("Material: " + keyboard_type + " not found.");
                 } else {
-                    console.log("Material: "+ keyboard_type +" found.");
+                    console.log("Material: " + keyboard_type + " found.");
                     if (rows[0].assign_id != null) {
                         if (rows[0].quantity < 1) {
                             // order new material here
                         } else {
                             //Enough right material. Proceed.
-                             console.log("Enough material:" + keyboard_type);
+                            console.log("Enough material:" + keyboard_type);
                             data["Message"] = "Enough material:" + keyboard_type;
                             //res.status(201).json(data);
                         }
@@ -365,9 +366,9 @@ app.post("/createNew", function (req,res) {
             });
         }
     });
-    
+
     res.send("Something happened.")
-    
+
     /*
     //Test all attributes are given (id, category, type, quantity, supplier, arrival_date)
     if (query.hasOwnProperty('category') && query.hasOwnProperty('type')
@@ -375,7 +376,6 @@ app.post("/createNew", function (req,res) {
         // Test that attributes are not empty
         if (query.category.length != 0 && query.type.length != 0
             && query.quantity.length != 0 && query.supplier.length != 0 && query.arrival_date.length != 0) {
-
             // Create an id and GET the attributes and store them into variables
             var id = uuid.v4() // id generated
             var category = query.category;
@@ -383,7 +383,6 @@ app.post("/createNew", function (req,res) {
             var quantity = query.quantity;
             var supplier = query.supplier;
             var date = query.arrival_date;
-
             // conenction to mysql database + inserting data to database according to given parameters + result handling
             connection.query("INSERT INTO materials (material_id,category,type,quantity,supplier,arrival_date) VALUES ('" + id + "','" + category + "','" + type + "','" + quantity + "','" + supplier + "','" + date + "')", function (err, rows, fields) {
                 if (err) {
@@ -392,14 +391,12 @@ app.post("/createNew", function (req,res) {
                     //respond to postman
                     res.status(400).json(data); //400 Query not complete
                 } else {
-
                     console.log("Material Created Successfully");
                     data["Message"] = "Material Created Successfully";
                     //respond to postman
                     res.status(201).json(data); //201: Created
                 }
             });
-
         } else {
             console.log("Empty attributes!")
             data["Message"] = "Bad request: Empty attributes!";
@@ -481,7 +478,7 @@ app.delete('/warehouse/products', function (req, res) {
             // Get the id 
             var id = query.id;
             //Check the if the id is in the database 
-            var check_id = "SELECT product_id FROM products WHERE product_id='"+id+"'";
+            var check_id = "SELECT product_id FROM products WHERE product_id='" + id + "'";
             connection.query(check_id, function (err, rows, fields) {
                 //if id is found, the length of the rows is not 0 
                 if (rows.length != 0) {
@@ -816,6 +813,54 @@ app.put('/warehouse/products', function (req, res) {
     };
 });
 //----UPDATE------------------------------------------------------------------------------
+//----------------testing scada
+
+app.post("/manufacture", function (req, res) {
+
+    var model = "W";
+    var quantity = 2;
+    var orderID = 223
+
+    var options = {
+        url: "http://localhost:2999/master-recipes",
+        method: "POST",
+        json: {
+            "model": model,
+            "quantity": quantity,
+            "orderID": orderID
+        } //body
+    }
+    //logging request. just for debugging purposes, so that you can see if something goes wrong
+    console.log(JSON.stringify(options));
+    //request from require('request')
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log(response.statusCode, body);
+        }
+    });
+    data = {
+        "Status": "Start manufacturing",
+        "model": model,
+        "quantity": quantity,
+        "orderID": orderID
+    }
+    res.send(data);
+});
+
+app.get("/pick-scada-message", function (req, res) {
+    var model = req.body.model;
+    var quantity = req.body.quantity;
+    var orderID = req.body.orderID;
+
+    console.log(orderID);
+    console.log(model);
+    console.log(quantity);
+
+    res.send();
+});
+
 
 app.listen(2998, function () {
     console.log('MES Server started. Port: 2998');
