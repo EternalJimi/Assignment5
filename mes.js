@@ -267,7 +267,7 @@ app.get('/warehouse/products', function (req, res) {
     })
 
 });
-//--------------------------------------------------------GET----------------
+
 //-POST/ADD----------------------------------------------------------------------
 //--New product order
 
@@ -320,56 +320,11 @@ app.post("/createNew", function (req, res) {
                     }
                 }
             );
-
-            /*var ready = checkMaterials(frame_type,screen_type,keyboard_type);
-            if (ready == 1) {
-                console.log("All materials ready");
-            } else {
-                console.log("Should check again.");
-            }*/
         }
     });
 
     res.send("Something happened.")
 
-    /*
-    //Test all attributes are given (id, category, type, quantity, supplier, arrival_date)
-    if (query.hasOwnProperty('category') && query.hasOwnProperty('type')
-        && query.hasOwnProperty('quantity') && query.hasOwnProperty('supplier') && query.hasOwnProperty('arrival_date')) {
-        // Test that attributes are not empty
-        if (query.category.length != 0 && query.type.length != 0
-            && query.quantity.length != 0 && query.supplier.length != 0 && query.arrival_date.length != 0) {
-            // Create an id and GET the attributes and store them into variables
-            var id = uuid.v4() // id generated
-            var category = query.category;
-            var type = query.type;
-            var quantity = query.quantity;
-            var supplier = query.supplier;
-            var date = query.arrival_date;
-            // conenction to mysql database + inserting data to database according to given parameters + result handling
-            connection.query("INSERT INTO materials (material_id,category,type,quantity,supplier,arrival_date) VALUES ('" + id + "','" + category + "','" + type + "','" + quantity + "','" + supplier + "','" + date + "')", function (err, rows, fields) {
-                if (err) {
-                    console.log("Error Adding data: " + err);
-                    data["Message"] = "Error Adding data";
-                    //respond to postman
-                    res.status(400).json(data); //400 Query not complete
-                } else {
-                    console.log("Material Created Successfully");
-                    data["Message"] = "Material Created Successfully";
-                    //respond to postman
-                    res.status(201).json(data); //201: Created
-                }
-            });
-        } else {
-            console.log("Empty attributes!")
-            data["Message"] = "Bad request: Empty attributes!";
-            res.status(400).json(data); //Bad request
-        }
-    } else {
-        console.log("You must fill category, type, quantity, supplier and arrival_date");
-        data["Message"] = "You must fill category, type, quantity, supplier and arrival_date";
-        res.status(400).json(data);
-    };*/
 });
 
 //-Products----------------------------------------------
@@ -534,126 +489,6 @@ app.delete('/warehouse/materials', function (req, res) {
 });
 //----Delete----end--------------------------------------------------------------------------
 //----UPDATE------------------------------------------------------------------------------
-//----update sql field for a material with a certain id
-
-app.put('/warehouse/materials', function (req, res) {
-    var data = {
-        "Back to Warehouse": "/warehouse",
-        "Go to Materials": "/warehouse/materials",
-        "Go to Products": "/warehouse/products",
-        "Message": ""
-    };
-    var query = req.query;
-
-    //Test that the id has been given
-    if (query.hasOwnProperty('id')) {
-        // Test id value is not empty
-        if (query.id.length != 0) {
-            var id = query.id;
-            //Now check that the given id exists in the database. if no, we cant update it
-            var check_id = "SELECT material_id FROM materials WHERE material_id='" + id + "'";
-            connection.query(check_id, function (err, rows, fields) {
-                if (rows.length != 0) {
-                    // Update category
-                    if (query.hasOwnProperty('category')) {
-                        var category = query.category;
-                        // Updates are done below - for each parameter there is if-statement, and if a new parameter is given, it is updated for the specified id
-                        // updating category to given id
-                        connection.query("UPDATE materials SET category='" + category + "'  WHERE material_id='" + id + "'", function (err, rows, fields) {
-                            if (err) {
-                                console.log("Error Updating data");
-                                data["Message"] = "Error Updating data";
-                                res.status(404).json(data); //Not found
-                            } else {
-
-                                console.log("Material Updated Successfully");
-                                data["Message"] = "OK. Material Updated Successfully.";
-                                res.status(200).json(data); //OK
-                            }
-                        });
-                        // Update type
-                    } else if (query.hasOwnProperty('type')) {
-                        var type = query.type;
-                        connection.query("UPDATE materials SET type='" + type + "'  WHERE material_id='" + id + "'", function (err, rows, fields) {
-                            if (err) {
-                                console.log("Error Updating data");
-                                data["Message"] = "Error Updating data";
-                                res.status(404).json(data); //Not found
-                            } else {
-
-                                console.log("Material Updated Successfully");
-                                data["Message"] = "OK. Material Updated Successfully.";
-                                res.status(200).json(data); //OK
-                            }
-                        });
-                        // Update quntity
-                    } else if (query.hasOwnProperty('quantity')) {
-                        var quantity = query.quantity;
-                        connection.query("UPDATE materials SET quantity='" + quantity + "'  WHERE material_id='" + id + "'", function (err, rows, fields) {
-                            if (err) {
-                                console.log("Error Updating data");
-                                data["Message"] = "Error Updating data";
-                                res.status(404).json(data); //Not found
-                            } else {
-
-                                console.log("Material Updated Successfully");
-                                data["Message"] = "OK. Material Updated Successfully.";
-                                res.status(200).json(data); //OK
-                            }
-                        });
-                        //UPdate supplier
-                    } else if (query.hasOwnProperty('supplier')) {
-                        var supplier = query.supplier;
-                        connection.query("UPDATE materials SET supplier='" + supplier + "'  WHERE material_id='" + id + "'", function (err, rows, fields) {
-                            if (err) {
-                                console.log("Error Updating data");
-                                data["Message"] = "Error Updating data";
-                                res.status(404).json(data); //Not found
-                            } else {
-
-                                console.log("Material Updated Successfully");
-                                data["Message"] = "OK. Material Updated Successfully.";
-                                res.status(200).json(data); //OK
-                            }
-                        });
-                        //Update arrival_date
-                    } else if (query.hasOwnProperty('arrival_date')) {
-                        var arrival_date = arrival_date;
-                        connection.query("UPDATE materials SET arrival_date='" + arrival_date + "'  WHERE material_id='" + id + "'", function (err, rows, fields) {
-                            if (err) {
-                                console.log("Error Updating data");
-                                data["Message"] = "Error Updating data";
-                                res.status(404).json(data); //Not found
-                            } else {
-
-                                console.log("Material Updated Successfully");
-                                data["Message"] = "OK. Material Updated Successfully.";
-                                res.status(200).json(data); //OK
-                            }
-                        });
-
-                    } else {
-                        console.log("You have no parametter to update!");
-                        data["Message"] = "Bad request: you have no parameter to update!";
-                        res.status(400).json(data);
-                    };
-                } else {
-                    console.log("There is no material with id: " + id);
-                    data["Message"] = "Bad request: there is no material with id: " + id;
-                    res.status(404).json(data); //Not found
-                }
-            });
-        } else {
-            console.log("id value empty!");
-            data["Message"] = "Bad request: id value empty!";
-            res.status(400).json(data);
-        }
-    } else {
-        console.log("You must fill id!")
-        data["Message"] = "Bad request: You must fill id!";
-        res.status(400).json(data);
-    };
-});
 
 //----UPDATE products with a certain id---------------------------------------------------
 app.put('/warehouse/products', function (req, res) {
