@@ -1,4 +1,4 @@
-﻿// Author: Lauri "Super" Tyysk� & Jimi "Jalmari" Manninen
+// Author: Lauri "Super" Tyysk� & Jimi "Jalmari" Manninen
 
 var express = require('express'),
     app = express();
@@ -12,6 +12,10 @@ var connection = mysql.createConnection({
     password: 'mysql',
     database: 'bear_db'
 });
+
+//Connection to SCADA
+var scada = require('./scada.js');
+scadaURL = "http://localhost:2990";
 
 //MES initialisation
 var mes = {
@@ -287,6 +291,7 @@ app.post("/createNew", function (req, res) {
         res.status(404).send(data);
     }
 
+    //Fetching the BOM from database
     connection.query("SELECT * FROM master_recipe WHERE model =" + '"' + model + '"', function (err, rows, fields) {
         if (err) {
             console.log("Error finding data: " + err);
@@ -295,75 +300,17 @@ app.post("/createNew", function (req, res) {
         } else if (rows.length == 0) {
             console.log("Model: " + model + " not found.");
         } else {
-            console.log("Material: " + model + " found.");
+            console.log("BOM for material: " + model + " found.");
             var frame_type = rows[0].frame;
             var screen_type = rows[0].screen;
             var keyboard_type = rows[0].keyboard;
 
-            // Checking if enough materials for given model
-            connection.query("SELECT * FROM materials WHERE type =" + '"' + screen_type + '"', function (err, rows, fields) {
-                if (err) {
-                    console.log("Error finding data");
-                    data["Message"] = "Error finding data: " + err;
-                    //res.status(400).json(data);
-                } else if (rows.length == 0) {
-                    console.log("Material: " + screen_type + " not found.");
-                } else {
-                    console.log("Material: " + screen_type + " found.");
-                    if (rows[0].assign_id != null) {
-                        if (rows[0].quantity < 1) {
-                            // order new material here
-                        } else {
-                            //Enough right material. Proceed.
-                            console.log("Enough material:" + screen_type);
-                            data["Message"] = "Enough material:" + screen_type;
-                            //res.status(201).json(data);
-                        }
-                    }
-                }
-            });
-            connection.query("SELECT * FROM materials WHERE type =" + '"' + frame_type + '"', function (err, rows, fields) {
-                if (err) {
-                    console.log("Error finding data");
-                    data["Message"] = "Error finding data: " + err;
-                    //res.status(400).json(data);
-                } else if (rows.length == 0) {
-                    console.log("Material: " + frame_type + " not found.");
-                } else {
-                    console.log("Material: " + frame_type + " found.");
-                    if (rows[0].assign_id != null) {
-                        if (rows[0].quantity < 1) {
-                            // order new material here
-                        } else {
-                            //Enough right material. Proceed.
-                            console.log("Enough material:" + frame_type);
-                            data["Message"] = "Enough material:" + frame_type;
-                            //res.status(201).json(data);
-                        }
-                    }
-                }
-            });
-            connection.query("SELECT * FROM materials WHERE type =" + '"' + keyboard_type + '"', function (err, rows, fields) {
-                if (err) {
-                    console.log("Error finding data");
-                    data["Message"] = "Error finding data: " + err;
-                    //res.status(400).json(data);
-                } else if (rows.length == 0) {
-                    console.log("Material: " + keyboard_type + " not found.");
-                } else {
-                    console.log("Material: " + keyboard_type + " found.");
-                    if (rows[0].assign_id != null) {
-                        if (rows[0].quantity < 1) {
-                            // order new material here
-                        } else {
-                            //Enough right material. Proceed.
-                            console.log("Enough material:" + keyboard_type);
-                            data["Message"] = "Enough material:" + keyboard_type;
-                            //res.status(201).json(data);
-                        }
-                    }
-                }
-            });
+            var ready = checkMaterials(frame_type,screen_type,keyboard_type);
+            if (ready == 1) {
+                console.log("All materials ready");
+            } else {
+                console.log("Should check again.");
+            }
         }
     });
 
@@ -817,9 +764,9 @@ app.put('/warehouse/products', function (req, res) {
 
 app.post("/manufacture", function (req, res) {
 
-    var model = "W";
-    var quantity = 2;
-    var orderID = 223
+    var model = req.body.model;
+    var quantity = req.body.quantity;
+    var orderID = req.body.orderID;
 
     var options = {
         url: "http://localhost:2999/master-recipes",
@@ -861,6 +808,85 @@ app.get("/pick-scada-message", function (req, res) {
     res.send();
 });
 
+function checkMaterials(frame_type,screen_type,keyboard_type) {
+    //Every value of array should be 1 if materials are present
+    var checkArray = [0,0,0];
+    var state = 0; //state 0 if not ready, 1 when ready
+    
+    // Checking if enough all materials for given model
+    connection.query("SELECT * FROM materials WHERE type =" + '"' + screen_type + '"', function (err, rows, fields) {
+        if (err) {
+            console.log("Error finding data");
+            data["Message"] = "Error finding data: " + err;
+            //res.status(400).json(data);
+        } else if (rows.length == 0) {
+            console.log("Material: " + screen_type + " not found.");
+        } else {
+            console.log("Material: " + screen_type + " found.");
+            if (rows[0].assign_id != null) {
+                if (rows[0].quantity < 1) {
+                    // order new material here
+                } else {
+                    //Enough right material. Proceed.
+                    console.log("Enough material:" + screen_type);
+                    data["Message"] = "Enough material:" + screen_type;
+                    checkArray[0] = 1;
+                }
+            }
+        }
+    });
+    connection.query("SELECT * FROM materials WHERE type =" + '"' + frame_type + '"', function (err, rows, fields) {
+        if (err) {
+            console.log("Error finding data");
+            data["Message"] = "Error finding data: " + err;
+            //res.status(400).json(data);
+        } else if (rows.length == 0) {
+            console.log("Material: " + frame_type + " not found.");
+        } else {
+            console.log("Material: " + frame_type + " found.");
+            if (rows[0].assign_id != null) {
+                if (rows[0].quantity < 1) {
+                    // order new material here
+                } else {
+                    //Enough right material. Proceed.
+                    console.log("Enough material:" + frame_type);
+                    data["Message"] = "Enough material:" + frame_type;
+                    checkArray[1] = 1;
+                }
+            }
+        }
+    });
+    connection.query("SELECT * FROM materials WHERE type =" + '"' + keyboard_type + '"', function (err, rows, fields) {
+        if (err) {
+            console.log("Error finding data");
+            data["Message"] = "Error finding data: " + err;
+            //res.status(400).json(data);
+        } else if (rows.length == 0) {
+            console.log("Material: " + keyboard_type + " not found.");
+            console.log("CheckArray= " + checkArray);
+            return state;
+        } else {
+            console.log("Material: " + keyboard_type + " found.");
+            if (rows[0].assign_id != null) {
+                if (rows[0].quantity < 1) {
+                    // order new material here
+                } else {
+                    //Enough right material. Proceed.
+                    console.log("Enough material:" + keyboard_type);
+                    data["Message"] = "Enough material:" + keyboard_type;
+                    checkArray[2] = 1;
+                    var sum = checkArray[0]+checkArray[1]+checkArray[2];
+                    
+                    if (sum == 3) {
+                        state = 1;
+                    }
+                    console.log("CheckArray= " + checkArray);
+                    return state;
+                }
+            }
+        }
+    });
+}
 
 app.listen(2998, function () {
     console.log('MES Server started. Port: 2998');
