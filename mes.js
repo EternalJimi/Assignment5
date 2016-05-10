@@ -300,7 +300,7 @@ app.post("/createNew", function (req, res) {
         } else if (rows.length == 0) {
             console.log("Model: " + model + " not found.");
         } else {
-            console.log("BOM for material: " + model + " found.");
+            console.log("BOM for model " + model + " found.");
             var frame_type = rows[0].frame;
             var screen_type = rows[0].screen;
             var keyboard_type = rows[0].keyboard;
@@ -845,7 +845,6 @@ function checkMaterials(frame_type,screen_type,keyboard_type,callback) {
                 } else {
                     //Enough right material. Proceed.
                     console.log("Enough material:" + screen_type);
-                    data["Message"] = "Enough material:" + screen_type;
                     checkArray[0] = 1;
                 }
             }
@@ -866,7 +865,6 @@ function checkMaterials(frame_type,screen_type,keyboard_type,callback) {
                 } else {
                     //Enough right material. Proceed.
                     console.log("Enough material:" + frame_type);
-                    data["Message"] = "Enough material:" + frame_type;
                     checkArray[1] = 1;
                 }
             }
@@ -876,7 +874,7 @@ function checkMaterials(frame_type,screen_type,keyboard_type,callback) {
         if (err) {
             console.log("Error finding data");
             data["Message"] = "Error finding data: " + err;
-            //res.status(400).json(data);
+            callback(null,state);
         } else if (rows.length == 0) {
             console.log("Material: " + keyboard_type + " not found.");
             console.log("CheckArray= " + checkArray);
@@ -889,15 +887,15 @@ function checkMaterials(frame_type,screen_type,keyboard_type,callback) {
                 } else {
                     //Enough right material. Proceed.
                     console.log("Enough material:" + keyboard_type);
-                    data["Message"] = "Enough material:" + keyboard_type;
                     checkArray[2] = 1;
-                    var sum = checkArray[0]+checkArray[1]+checkArray[2];
                     
-                    if (sum == 3) {
+                    if (checkArray[0]+checkArray[1]+checkArray[2] == 3) {
                         state = 1;
+                        callback(null,state);
+                    } else {
+                        callback(null,state);
                     }
                     console.log("CheckArray= " + checkArray);
-                    callback(null,state);
                 }
             }
         }
