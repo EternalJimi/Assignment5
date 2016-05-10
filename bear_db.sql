@@ -45,6 +45,32 @@ INSERT INTO `master_recipe` VALUES ('MasterRec-15d4df8c-3a50-497e-8b6d-d6d477b16
 UNLOCK TABLES;
 
 --
+-- Table structure for table `materials`
+--
+
+DROP TABLE IF EXISTS `materials`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `materials` (
+  `material_id` int(11) NOT NULL,
+  `type` varchar(45) DEFAULT NULL,
+  `quantity` int(11) DEFAULT NULL,
+  `supplier` varchar(45) DEFAULT NULL,
+  `assign_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`material_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `materials`
+--
+
+LOCK TABLES `materials` WRITE;
+/*!40000 ALTER TABLE `materials` DISABLE KEYS */;
+/*!40000 ALTER TABLE `materials` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `orders`
 --
 
@@ -54,9 +80,10 @@ DROP TABLE IF EXISTS `orders`;
 CREATE TABLE `orders` (
   `order_id` varchar(45) NOT NULL,
   `product` varchar(45) DEFAULT NULL,
-  `quantity` varchar(45) DEFAULT NULL,
+  `quantity` int(11) DEFAULT NULL,
   `delivery` date DEFAULT NULL,
-  `status` tinyint(1) DEFAULT NULL,
+  `customer` varchar(45) DEFAULT NULL,
+  `status` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -67,6 +94,7 @@ CREATE TABLE `orders` (
 
 LOCK TABLES `orders` WRITE;
 /*!40000 ALTER TABLE `orders` DISABLE KEYS */;
+INSERT INTO `orders` VALUES ('09f9f809-6f69-4542-9aaf-38543a835ed1','Laurin_etuhammas',1,'2014-05-20',NULL,'0'),('1','testProduct',3,'2029-04-20',NULL,'0'),('11652b0a-7659-4602-8602-b8ce807e67e4','ProDuctTape_XXL',1000,'2001-01-20',NULL,'0'),('4ebfc943-b8a6-42ad-a45d-5d965edcfb42','Laurin_Viisaudenhammas',2,'2015-05-20',NULL,'0'),('636f73f6-baeb-4c7e-92f3-80d617423465','ProDuctTape',2,'2001-01-20',NULL,'0'),('7df4f24e-2904-418b-b192-6b1cd5e2f6d0','ProDuctTape',2,'2001-01-20',NULL,'0'),('874b858f-5bcc-4914-ae16-4870ad770823','ProDuctTape_XLarge',1000,'2001-01-20',NULL,'0'),('d05406a4-ef90-4e2c-9db6-433ce1c1c1a9','ProDuctTape_XLarge',1000,'2001-01-20',NULL,'0'),('fda63932-f58a-4e5f-a82f-32f56258c8ac','ProDuctTape',2,'2001-01-20',NULL,'0');
 /*!40000 ALTER TABLE `orders` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -78,8 +106,12 @@ DROP TABLE IF EXISTS `products`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `products` (
+  `product_number` int(11) NOT NULL,
   `model` varchar(45) NOT NULL,
-  PRIMARY KEY (`model`)
+  `quantity` int(11) DEFAULT NULL,
+  `customer` varchar(45) DEFAULT NULL,
+  `order_id` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`product_number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -101,4 +133,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2016-05-03 21:43:48
+-- Dump completed on 2016-05-10 13:25:26
