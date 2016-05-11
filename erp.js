@@ -1,3 +1,6 @@
+//Lauri "fernando" Tyyskä & Jimi "eternal-boob" Manninen
+//ERP Port: 2997
+
 var express = require('express'),
     app = express();
 var bodyParser = require("body-parser");
@@ -12,7 +15,7 @@ var connection = mysql.createConnection({
     database: 'bear_db'
 });
 
-//Connection to MES
+//Start MES & Connection to MES
 var mes = require('./mes.js');
 mesURL = "http://localhost:2998";
 
@@ -20,11 +23,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json()); // Body parser uses JSON data
 
 //create a connection to mySQL
-connection.connect(function (err) {             
+connection.connect(function (err) {
     if (!err) {
         console.log("[ERP] Connected to database.");
     } else {
-        res.statusCode = 503; //Service unavailable
+        //res.statusCode = 503; //Service unavailable
         console.log("Error...");
         console.log(err);
         process.exit(1);
@@ -42,13 +45,13 @@ app.get('/erp', function (req, res) {
 });
 
 //--get orders
-app.get('/orders', function (req,res){
+app.get('/orders', function (req, res) {
     var data = {
         "Orders": ""
     };
-    
+
     var sql_query = "SELECT * FROM orders";
-    
+
     //connection to mysql + result handling
     connection.query(sql_query, function (err, rows, fields) {
         if (rows.length != 0) {
@@ -63,25 +66,25 @@ app.get('/orders', function (req,res){
 
 //--get order
 app.get('/order/:id', function (req, res) {
-    
+
     var data = {
         "Back to Orders": "/orders",
         "Order": ""
     };
-    
+
     //get id param 
     var id = req.params.id;
 
     //Start creating the sql query - Query is compiled according to the users given parameters
     var sql_query = "SELECT * FROM orders";
-    
+
     //Checking the param
     if (id !== undefined) {
         sql_query = sql_query + " WHERE order_id='" + id + "'";
     } else {
         console.log("No order id given.")
-            data["Message"] = "Bad request: Empty attributes!";
-            res.status(400).json(data); //Bad request
+        data["Message"] = "Bad request: Empty attributes!";
+        res.status(400).json(data); //Bad request
     }
 
     //connection to mysql and final query statement + result handling
@@ -100,13 +103,13 @@ app.get('/order/:id', function (req, res) {
 //----POST---------------------------------------------------------------------------
 
 //--Post orders
-app.post('/orders', function (req,res){
+app.post('/orders', function (req, res) {
     var data = {
         "New Order": ""
     };
-    
+
     var query = req.query; //Accessing query
-    
+
     // Create an id and GET the attributes and store them into variables
     var id = uuid.v4() // id generated
     var product = query.product;
@@ -114,7 +117,7 @@ app.post('/orders', function (req,res){
     var date = query.done_by;
     var customer = query.customer;
     var status = "in progress";
-    
+
     // conenction to mysql database + inserting data to database according to given parameters + result handling
     connection.query("INSERT INTO orders (order_id,product,quantity,delivery,customer,status) VALUES ('" + id + "','" + product + "','" + quantity + "','" + date + "','" + customer + "','" + status + "')", function (err, rows, fields) {
         if (err) {
@@ -127,33 +130,98 @@ app.post('/orders', function (req,res){
             console.log("Order Created Successfully");
             data["Message"] = "Order Created Successfully";
             //respond to postman
-            res.status(201).send({url:'/order/' + id}); //201: Created
+            res.status(201).send({ url: '/order/' + id }); //201: Created
         }
     });
-    
+
     var options = {
         url: mesURL + "/createNew",
         method: "POST",
         //here we are using our server url:
-        json:{
-           "product": product, 
-           "quantity": quantity,
-           "order_id": id,
-           "customer": customer
+        json: {
+            "product": product,
+            "quantity": quantity,
+            "order_id": id,
+            "customer": customer 
         } //Body. These values get passed on when requested.
     }
-    
+
     //logging request. just for debugging purposes, so that you can see if something goes wrong
     console.log(JSON.stringify(options));
     //request from require('request')
-    request(options , function(error, response, body){
-        if(error) {
+    request(options, function (error, response, body) {
+        if (error) {
             console.log(error);
         } else {
             console.log(response.statusCode, body);
         }
     });
 });
+
+//POST comes from MES 
+//order materials from supplier (if warehouse has insufficien amount of materials to complete order for customer)
+//all materials are from this same supplier, material batch size is 10, if need is for 2 screens -> oeder 10
+app.post('/order-materials', function (req, res) {
+
+    var customer = "Eternal-boobs Co";
+    // CAPTURE WHAT MATERIAL AND AMOUNT
+    var material = "screen";
+    var quantity = 72;
+
+    var quantity = calculate_order(quantity);
+    console.log(quantity);
+
+
+
+    var options = {
+        url: "http://localhost:4000/receive-orders",
+        method: "GET",
+        //here we are using our server url:
+        json: {
+            "customer": customer,
+            "material": material,
+            "quantity": quantity,
+        } //Body. These values get passed on when requested.
+    }
+    
+    //logging request. just for debugging purposes, so that you can see if something goes wrong
+    //console.log(JSON.stringify(options));
+    //request from require('request')
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log(response.statusCode, body);
+        }
+    });
+    var data = {
+        "Ordered materials": "",
+        "Material": material,
+        "Quantity": quantity
+    }
+    res.send(data);
+    console.log("Ordered more materials: " + quantity + ", " + material)
+});
+
+//get -- order materials from the supplier ---- ADDING THE MATERIALS TO SQL AND INFORMING MES
+app.get('/receive-materials', function (req, res) {
+    var material = req.body.material; // WHAT MATERIAL 
+    var quantity = req.body.quantity; //THE AMOUNT
+    
+    console.log("received: " + quantity + material);
+    res.send();
+
+
+
+});
+
+
+//function for calculating the order amount from supplier
+//material batch size is 10
+function calculate_order(quantity) {
+    var batch = Math.ceil(quantity / 10) * 10;
+    return batch;
+}
 
 //----- ERP on port 2997 -----
 app.listen(2997, function () {
