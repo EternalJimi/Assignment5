@@ -1,4 +1,4 @@
-// Author: Lauri "Super" Tyysk� & Jimi "Jalmari" Manninen
+﻿// Author: Lauri "Super" Tyysk� & Jimi "Jalmari" Manninen
 
 var express = require('express'),
     app = express();
@@ -16,7 +16,7 @@ var connection = mysql.createConnection({
 
 //Connection to SCADA
 var scada = require('./scada.js');
-scadaURL = "http://localhost:2990";
+scadaURL = "http://localhost:2999";
 
 //MES initialisation
 var mes = {
@@ -304,19 +304,21 @@ app.post("/createNew", function (req, res) {
             var frame_type = rows[0].frame;
             var screen_type = rows[0].screen;
             var keyboard_type = rows[0].keyboard;
-            
+
             async.series([
                 function (callback) {
-                    checkMaterials(frame_type,screen_type,keyboard_type,callback);
+                    checkMaterials(quantity, frame_type, screen_type, keyboard_type, callback);
                 }],
                 function (err, results) {
                     if (err) {
                         console.log(err);
-                    } else if (results[0]==1) {
+                    } else if (results[0] == 1) {
                         console.log("Materials ready");
+                        build_phones(frame_type, screen_type, keyboard_type, model, quantity, order_id);
+
                     } else {
                         console.log("Materials not ready");
-                        console.log("results: "+results);
+                        console.log("results: " + results);
                     }
                 }
             );
@@ -326,6 +328,97 @@ app.post("/createNew", function (req, res) {
     res.send("Something happened.")
 
 });
+
+function build_phones(frame_type, screen_type, keyboard_type, model, quantity, order_id) {
+    //decrease materials from sql
+    //first frame
+    connection.query("SELECT * FROM materials WHERE type =" + '"' + frame_type + '"', function (err, rows, fields) {
+        if (err) {
+            console.log("Error finding data");
+            data["Message"] = "Error finding data: " + err;
+        } else if (rows.length == 0) {
+            console.log("Material: " + frame_type + " not found.");
+        } else {
+            var howMany = rows[0].quantity;
+            var left = howMany - quantity;  //materials in SQL - the amount of phones
+            console.log(left);
+
+            connection.query("UPDATE materials SET quantity='" + left + "' WHERE type='" + frame_type + "'", function (err, rows, fields) {
+                if (err) {
+                    console.log("Error updating data");
+                } else {
+                    console.log("materials updated Successfully");
+                }
+            });
+        }
+
+    });
+    //Then screen
+    connection.query("SELECT * FROM materials WHERE type =" + '"' + screen_type + '"', function (err, rows, fields) {
+        if (err) {
+            console.log("Error finding data");
+            data["Message"] = "Error finding data: " + err;
+        } else if (rows.length == 0) {
+            console.log("Material: " + screen_type + " not found.");
+        } else {
+            var howMany = rows[0].quantity;
+            var left = howMany - quantity;  //materials in SQL - the amount of phones
+            console.log(left);
+
+            connection.query("UPDATE materials SET quantity='" + left + "' WHERE type='" + screen_type + "'", function (err, rows, fields) {
+                if (err) {
+                    console.log("Error updating data");
+                } else {
+                    console.log("materials updated Successfully");
+                }
+            });
+        }
+
+    });
+    connection.query("SELECT * FROM materials WHERE type =" + '"' + keyboard_type + '"', function (err, rows, fields) {
+        if (err) {
+            console.log("Error finding data");
+            data["Message"] = "Error finding data: " + err;
+        } else if (rows.length == 0) {
+            console.log("Material: " + keyboard_type + " not found.");
+        } else {
+            var howMany = rows[0].quantity;
+            var left = howMany - quantity;  //materials in SQL - the amount of phones
+            console.log(left);
+            
+            connection.query("UPDATE materials SET quantity='" + left + "' WHERE type='" + keyboard_type + "'", function (err, rows, fields) {
+                if (err) {
+                    console.log("Error updating data");
+                } else {
+                    console.log("materials updated Successfully");
+                }
+            });
+        }
+
+    });
+
+    //send parameters to /manufacture
+    var options = {
+        url: "http://localhost:2998/manufacture",
+        method: "POST",
+        json: {
+            "model": model,
+            "quantity": quantity,
+            "orderID": order_id
+        } //body
+    }
+    //logging request. just for debugging purposes, so that you can see if something goes wrong
+    //console.log(JSON.stringify(options));
+    //request from require('request')
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log(response.statusCode, body);
+        }
+    });
+
+}
 
 //-Products----------------------------------------------
 app.post('/warehouse/products', function (req, res) {
@@ -629,7 +722,7 @@ app.post("/manufacture", function (req, res) {
         } //body
     }
     //logging request. just for debugging purposes, so that you can see if something goes wrong
-    console.log(JSON.stringify(options));
+    //console.log(JSON.stringify(options));
     //request from require('request')
     request(options, function (error, response, body) {
         if (error) {
@@ -647,23 +740,40 @@ app.post("/manufacture", function (req, res) {
     res.send(data);
 });
 
-app.get("/pick-scada-message", function (req, res) {
+app.get("/scada-ready", function (req, res) {
     var model = req.body.model;
     var quantity = req.body.quantity;
     var orderID = req.body.orderID;
 
-    console.log(orderID);
-    console.log(model);
-    console.log(quantity);
+    //save new phones in the SQL
+    console.log("[MES] "+orderID);
+    console.log("[MES] "+model);
+    console.log("[MES] "+quantity);
 
-    res.send();
+    //res.send();
+    //INSERT the manufactured phones in SQL
+
+    connection.query("INSERT INTO products (model,quantity,order_id) VALUES ('" + model + "','" + quantity + "','" + orderID + "')", function (err, rows, fields) {
+        if (err) {
+            console.log("Error Adding data");
+            data["Message"] = "Error Adding data";
+            res.status(400).json(data);
+        } else {
+
+            console.log("Product Added Successfully");
+            data["Message"] = "Product Added Successfully";
+            res.status(201).json(data);
+        }
+    });
+
+
 });
 
-function checkMaterials(frame_type,screen_type,keyboard_type,callback) {
+function checkMaterials(amount, frame_type, screen_type, keyboard_type, callback) {
     //Every value of array should be 1 if materials are present
-    var checkArray = [0,0,0];
+    var checkArray = [0, 0, 0];
     var state = 0; //state 0 if not ready, 1 when ready
-    
+
     // Checking if enough all materials for given model
     connection.query("SELECT * FROM materials WHERE type =" + '"' + screen_type + '"', function (err, rows, fields) {
         if (err) {
@@ -673,10 +783,11 @@ function checkMaterials(frame_type,screen_type,keyboard_type,callback) {
         } else if (rows.length == 0) {
             console.log("Material: " + screen_type + " not found.");
         } else {
-            console.log("Material: " + screen_type + " found.");
+            console.log("Material: " + screen_type + " found " + rows[0].quantity);
             if (rows[0].assign_id != null) {
-                if (rows[0].quantity < 1) {
+                if (rows[0].quantity < amount) {
                     // order new material here
+
                 } else {
                     //Enough right material. Proceed.
                     console.log("Enough material:" + screen_type);
@@ -693,9 +804,9 @@ function checkMaterials(frame_type,screen_type,keyboard_type,callback) {
         } else if (rows.length == 0) {
             console.log("Material: " + frame_type + " not found.");
         } else {
-            console.log("Material: " + frame_type + " found.");
+            console.log("Material: " + frame_type + " found " + rows[0].quantity);
             if (rows[0].assign_id != null) {
-                if (rows[0].quantity < 1) {
+                if (rows[0].quantity < amount) {
                     // order new material here
                 } else {
                     //Enough right material. Proceed.
@@ -709,26 +820,26 @@ function checkMaterials(frame_type,screen_type,keyboard_type,callback) {
         if (err) {
             console.log("Error finding data");
             data["Message"] = "Error finding data: " + err;
-            callback(null,state);
+            callback(null, state);
         } else if (rows.length == 0) {
             console.log("Material: " + keyboard_type + " not found.");
             console.log("CheckArray= " + checkArray);
-            callback(null,state);
+            callback(null, state);
         } else {
-            console.log("Material: " + keyboard_type + " found.");
+            console.log("Material: " + keyboard_type + " found " + rows[0].quantity);
             if (rows[0].assign_id != null) {
-                if (rows[0].quantity < 1) {
+                if (rows[0].quantity < amount) {
                     // order new material here
                 } else {
                     //Enough right material. Proceed.
                     console.log("Enough material:" + keyboard_type);
                     checkArray[2] = 1;
-                    
-                    if (checkArray[0]+checkArray[1]+checkArray[2] == 3) {
+
+                    if (checkArray[0] + checkArray[1] + checkArray[2] == 3) {
                         state = 1;
-                        callback(null,state);
+                        callback(null, state);
                     } else {
-                        callback(null,state);
+                        callback(null, state);
                     }
                     console.log("CheckArray= " + checkArray);
                 }
