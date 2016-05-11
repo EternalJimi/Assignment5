@@ -80,7 +80,7 @@ app.post("/master-recipes/newMaster", function (req, res) {
 });
 */
 var ready = 0;  //how many phones are ready
-var quantity = 0;   //phone quantity to be manufactured
+var quantity = 1;   //phone quantity to be manufactured
 var model = '';
 var orderID = 0;
 //--------------------------------------------------------------
@@ -156,7 +156,7 @@ app.post("/control-recipes", function (req, res) {
         "baseUrl": "http://localhost:3000"
     };  //CONTROL RECEPY NEED FASTORY PATH FOR ROBOT CONTOLS
     console.log(body);
-    // new ControlRec, gettin the master by id. Consider checking if exists!!!!!!!!!!
+    
     var cr = new ControlRec(repo.masterRecs[masterID], body);
     var quantity = 5;
     repo.contorlRecs[cr.id] = cr;
@@ -222,7 +222,7 @@ app.post("/notifications/:recipeId/:stepId", function (req, res) {
             console.log("------------------------------------------Order " + orderID + " is ready!-----------");
 
             var options = {
-                url: "http://localhost:2998/pick-scada-message",
+                url: "http://localhost:2998/scada-ready",
                 method: "GET",
                 json: {
                     "model": model,
@@ -231,7 +231,7 @@ app.post("/notifications/:recipeId/:stepId", function (req, res) {
                 } //body
             }
             //logging request. just for debugging purposes, so that you can see if something goes wrong
-            console.log(JSON.stringify(options));
+            //console.log(JSON.stringify(options));
             //request from require('request')
             request(options, function (error, response, body) {
                 if (error) {
