@@ -1,4 +1,4 @@
-//Lauri "fernando" Tyyskä & Jimi "eternal-boob" Manninen
+//Lauri Tyyska & Jimi Manninen
 //ERP Port: 2997
 
 var express = require('express'),
@@ -18,6 +18,7 @@ var connection = mysql.createConnection({
 //Start MES & Connection to MES
 var mes = require('./mes.js');
 mesURL = "http://localhost:2998";
+var supplier = require('./sup.js');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json()); // Body parser uses JSON data
@@ -163,10 +164,10 @@ app.post('/orders', function (req, res) {
 //all materials are from this same supplier, material batch size is 10, if need is for 2 screens -> oeder 10
 app.post('/order-materials', function (req, res) {
 
-    var customer = "Eternal-boobs Co";
+    var customer = "Eternal-bobs Co"; //This is our company's name which supplier receives
     // CAPTURE WHAT MATERIAL AND AMOUNT
-    var material = "screen";
-    var quantity = 72;
+    var material = req.body.material;
+    var quantity = req.body.quantity;
 
     var quantity = calculate_order(quantity);
     console.log(quantity);

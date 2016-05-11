@@ -1,4 +1,4 @@
-﻿// Author: Lauri "Super" Tyysk� & Jimi "Jalmari" Manninen
+// Author: Lauri "Super" Tyysk� & Jimi "Jalmari" Manninen
 
 var express = require('express'),
     app = express();
@@ -281,11 +281,11 @@ app.post("/createNew", function (req, res) {
     var customer = req.body.customer;
     var order_id = req.body.order_id;
 
-    console.log(req.body); //Debug
+    //console.log(req.body); //Debug
 
     if (model != undefined && quantity != undefined && customer != undefined && order_id != undefined) {
-        //res.status(200).send("Body accessible.");
-        console.log("Values from body accessible.");
+        //res.status(200).send("Body accessible."); These were for debugging.
+        //console.log("Values from body accessible.");
     } else {
         data["Message"] = "Something went wrong. Check given inputs.";
         res.status(404).send(data);
@@ -318,14 +318,14 @@ app.post("/createNew", function (req, res) {
 
                     } else {
                         console.log("Materials not ready");
-                        console.log("results: " + results);
+                        checkMaterials(quantity, frame_type, screen_type, keyboard_type, callback);
                     }
                 }
             );
         }
     });
 
-    res.send("Something happened.")
+    res.send()
 
 });
 
@@ -787,7 +787,7 @@ function checkMaterials(amount, frame_type, screen_type, keyboard_type, callback
             if (rows[0].assign_id != null) {
                 if (rows[0].quantity < amount) {
                     // order new material here
-
+                    orderMaterial(screen_type,amount-rows[0].quantity);
                 } else {
                     //Enough right material. Proceed.
                     console.log("Enough material:" + screen_type);
@@ -808,6 +808,7 @@ function checkMaterials(amount, frame_type, screen_type, keyboard_type, callback
             if (rows[0].assign_id != null) {
                 if (rows[0].quantity < amount) {
                     // order new material here
+                    orderMaterial(frame_type,amount-rows[0].quantity);
                 } else {
                     //Enough right material. Proceed.
                     console.log("Enough material:" + frame_type);
@@ -830,6 +831,7 @@ function checkMaterials(amount, frame_type, screen_type, keyboard_type, callback
             if (rows[0].assign_id != null) {
                 if (rows[0].quantity < amount) {
                     // order new material here
+                    orderMaterial(keyboard_type,amount-rows[0].quantity);
                 } else {
                     //Enough right material. Proceed.
                     console.log("Enough material:" + keyboard_type);
@@ -844,6 +846,27 @@ function checkMaterials(amount, frame_type, screen_type, keyboard_type, callback
                     console.log("CheckArray= " + checkArray);
                 }
             }
+        }
+    });
+}
+
+function orderMaterial(material_type, quantity) {
+    var options = {
+        url: "http://localhost:2997/order-materials",
+        method: "POST",
+        json: {
+            "material": material_type,
+            "quantity": quantity
+        } //body
+    }
+    //logging request. just for debugging purposes, so that you can see if something goes wrong
+    //console.log(JSON.stringify(options));
+    //request from require('request')
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log(error);
+        } else {
+            console.log(response.statusCode, body);
         }
     });
 }
